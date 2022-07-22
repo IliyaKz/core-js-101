@@ -20,8 +20,10 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+  this.getArea = () => width * height;
 }
 
 
@@ -35,8 +37,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +53,10 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  Object.setPrototypeOf(obj, proto);
+  return obj;
 }
 
 
@@ -110,33 +114,117 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
+function MySelector() {
+  this.el = '';
+  this.idValue = '';
+  this.cls = [];
+  this.attrValue = [];
+  this.psdCls = [];
+  this.psdEl = '';
+  this.order = 0;
+}
+
+function MyCombinedSelector(s1, c, s2) {
+  this.s1 = s1;
+  this.c = c;
+  this.s2 = s2;
+}
+
+MySelector.prototype = {
+  element(value) {
+    this.check('el', 1);
+    this.el = value;
+    return this;
+  },
+
+  id(value) {
+    this.check('idValue', 2);
+    this.idValue = value;
+    return this;
+  },
+
+  class(value) {
+    this.check('cls', 3);
+    this.cls.push(value);
+    return this;
+  },
+
+  attr(value) {
+    this.check('attrValue', 4);
+    this.attrValue.push(value);
+    return this;
+  },
+
+  pseudoClass(value) {
+    this.check('psdCls', 5);
+    this.psdCls.push(value);
+    return this;
+  },
+
+  pseudoElement(value) {
+    this.check('psdEl', 6);
+    this.psdEl = value;
+    return this;
+  },
+
+  check(val, ord) {
+    if (typeof this[val] === 'string' && this[val].length > 0) {
+      throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+    if (ord < this.order) {
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    this.order = ord;
+  },
+
+  transform(value, start, end) {
+    const copy = (!value) ? [] : value;
+    if (Array.isArray(copy)) {
+      return copy.map((item) => start + item + end).join('');
+    }
+    return start + copy + end;
+  },
+
+  stringify() {
+    const strEl = `${this.el}`;
+    const res = `${strEl}${this.transform(this.idValue, '#', '')}${this.transform(this.cls, '.', '')}${this.transform(this.attrValue, '[', ']')}${this.transform(this.psdCls, ':', '')}${this.transform(this.psdEl, '::', '')}`;
+    return res;
+  },
+};
+
+MyCombinedSelector.prototype = {
+  stringify() {
+    return `${this.s1.stringify()} ${this.c} ${this.s2.stringify()}`;
+  },
+};
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new MySelector().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new MySelector().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new MySelector().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new MySelector().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new MySelector().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new MySelector().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    return new MyCombinedSelector(selector1, combinator, selector2);
   },
 };
 
